@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
-import xgboost
 from xgboost import XGBRegressor
 import pickle
+from sklearn.model_selection import train_test_split
+from sklearn.multioutput import MultiOutputRegressor
 
 st.set_page_config(page_title="BioTech Data Miners", page_icon="🧊",)
 def new_line(n = 1 ): 
@@ -25,6 +26,9 @@ def new_line(n = 1 ):
         st.markdown('\n')
 
 
+
+train_data = pd.read_csv('train.csv')
+test_data = pd.read_csv('test.csv')
 st.markdown("<h1 align='center'>🧊 BioTech Data Miners</h1>", unsafe_allow_html=True)
 new_line()
 
@@ -72,12 +76,25 @@ enc_maps = [sequence_enc_map, sequence_enc_map, sequence_enc_map, sequence_enc_m
             looptype_enc_map, looptype_enc_map, looptype_enc_map, looptype_enc_map, looptype_enc_map
             ]
 
+train_data = pd.read_csv('train.csv')
+
+for target_col, enc_map in zip(enc_targets, enc_maps):
+    train_data[target_col] = train_data[target_col].apply(lambda x: enc_map.get(x, -1))
+
+target_columns = ['reactivity', 'deg_Mg_pH10', 'deg_Mg_50C']
+features = train_data.drop(target_columns, axis=1)
+features = features.drop(['id', 'id_seqpos'], axis=1)
+targets = train_data[target_columns]
+
+model = XGBRegressor(n_estimators=2, learning_rate=0.05, max_depth=4, subsample=0.8)
+regressor = MultiOutputRegressor(model)
+regressor.fit(features, targets)
 
 
 if inp is not None:
 
     df = pd.read_csv(inp)
-    model = pickle.load(open('best_model.pkl', 'rb'))
+    # model = pickle.load(open('best_model.pkl', 'rb'))
 
     
     st.markdown("<h4 align='center'> RNA sequence Features", unsafe_allow_html=True)
@@ -89,7 +106,7 @@ if inp is not None:
         
     st.divider()
     st.markdown("<h4 align='center'> Predictions", unsafe_allow_html=True)
-    pred = model.predict(df)
+    pred = regressor.predict(df)
     new_line(2)
 
     cola, colb, colc = st.columns(3)
