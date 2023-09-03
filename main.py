@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import xgboost
-# from xgboost import XGBRegressor
+from xgboost import XGBRegressor
 import pickle
 
 st.set_page_config(page_title="BioTech Data Miners", page_icon="🧊",)
